@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define ARRAY_SIZE 88
+#define ARRAY_SIZE 1000000
 #define N ARRAY_SIZE
 #define THRESHOLD 10
 
