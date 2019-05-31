@@ -14,7 +14,7 @@ typedef enum messageType {
 typedef struct message {
     MessageType type;
     int start;
-    int n;
+    int end;
 }Message;
 
 Message messagesQueue[N] = {};
@@ -38,7 +38,7 @@ void send(MessageType type, int start, int end) {
     // Enqueue message
     messagesQueue[messageIn].type = type;
     messagesQueue[messageIn].start = start;
-    messagesQueue[messageIn].n = end;
+    messagesQueue[messageIn].end = end;
     messageIn = (messageIn + 1) % N;
     numberOfMessages++;
 
@@ -56,7 +56,7 @@ void receive(MessageType *type, int *start, int *end) {
     // Dequeue message
     *type = messagesQueue[messageOut].type;
     *start = messagesQueue[messageOut].start;
-    *end = messagesQueue[messageOut].n;
+    *end = messagesQueue[messageOut].end;
     messageOut = (messageOut + 1) % N;
     numberOfMessages--;
 
