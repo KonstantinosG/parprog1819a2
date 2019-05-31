@@ -8,7 +8,7 @@
 #define THRESHOLD 10
 
 typedef enum messageType {
-    WORK, SHUTDOWN, FINISH, SEGMENTS_CHECK
+    WORK, SHUTDOWN, FINISH
 }MessageType;
 
 typedef struct message {
@@ -23,45 +23,44 @@ int numberOfMessages = 0;
 double *a;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t msg_in = PTHREAD_COND_INITIALIZER;
-pthread_cond_t msg_out = PTHREAD_COND_INITIALIZER;
+pthread_cond_t msgIn = PTHREAD_COND_INITIALIZER;
+pthread_cond_t msgOut = PTHREAD_COND_INITIALIZER;
 
 
 
 void send(MessageType type, int start, int end) {
     pthread_mutex_lock(&mutex);
     while (numberOfMessages >= N) {
-        // printf("\nProducer locked\n");
-        pthread_cond_wait(&msg_out, &mutex);
-        // printf
+        printf("\nSend Message Was Locked\n");
+        pthread_cond_wait(&msgOut, &mutex);
     }
     
-    // Append packet
+    // Enqueue message
     messagesQueue[messageIn].type = type;
     messagesQueue[messageIn].start = start;
     messagesQueue[messageIn].n = end;
     messageIn = (messageIn + 1) % N;
     numberOfMessages++;
 
-    pthread_cond_signal(&msg_in);
+    pthread_cond_signal(&msgIn);
     pthread_mutex_unlock(&mutex);
 }
 
 void receive(MessageType *type, int *start, int *end) {
     pthread_mutex_lock(&mutex);
     while (numberOfMessages < 1) {
-        // printf("\nConsumer locked\n");
-        pthread_cond_wait(&msg_in, &mutex);
+        printf("\nReceive Message Was Locked\n");
+        pthread_cond_wait(&msgIn, &mutex);
     }
 
-    // Dequeue packet
+    // Dequeue message
     *type = messagesQueue[messageOut].type;
     *start = messagesQueue[messageOut].start;
     *end = messagesQueue[messageOut].n;
     messageOut = (messageOut + 1) % N;
     numberOfMessages--;
 
-    pthread_cond_signal(&msg_out);
+    pthread_cond_signal(&msgOut);
     pthread_mutex_unlock(&mutex);
 }
 
@@ -89,7 +88,7 @@ void insort(double *a, int n) {
 }
 
 
-//Splits the array as needed
+//Splits the array as needed, returns the pivot
 int partition(double *a, int n){
     int first = 0;
     int middle = n/2;
@@ -158,30 +157,7 @@ void *threadFunc(void *params){
 
 
 int main(int argc, char *argv[]){
-    // int part1 = ARRAY_SIZE / 2;
-    // int part2 = 0;
-
-    // if (ARRAY_SIZE % 2 == 1){
-    //     part2 = (ARRAY_SIZE / 2) + 1;
-    // }
-    // int numberOfSplits = 1;
-    // printf("part2: %d\n", part2);
-
-    // while (part2 > THRESHOLD) {
-    //     if (part2 % 2 == 1 || part1 % 2 == 1){
-    //         part2 = (part2 / 2) + 1;
-    //     } else {
-    //         part2 /= 2;
-    //     }
-        
-    //     part1 /= 2;
-
-    //     printf("part2: %d\n", part2);
-    //     numberOfSplits += 1;
-    // }
-
-    // printf("numberOfSplits: %d\n", numberOfSplits);
-
+    
     pthread_t thread[THREADS] = {};
 
     int completed = 0;
@@ -213,7 +189,7 @@ int main(int argc, char *argv[]){
         }
     }
 
-    while (completed < N) {
+    while (completed < ARRAY_SIZE) {
         receive(&type, &start, &end);
         if (type == FINISH){
             completed += end - start;
@@ -240,7 +216,15 @@ int main(int argc, char *argv[]){
         printf("Array Was Sorted Correctly.\n");
     }
 
+    printf("Destroying Mutex\n");
+    pthread_mutex_destroy(&mutex);
+    printf("Destroying Con V msgIn\n");
+    pthread_cond_destroy(&msgIn);
+    printf("Destroying Con V msgOut\n");
+    pthread_cond_destroy(&msgOut);
+
     printf("Dealocating a\n");
     free(a);
+
     return 0;
 }
