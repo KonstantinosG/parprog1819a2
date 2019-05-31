@@ -22,10 +22,10 @@ int messageOut = 0, messageIn = 0;
 int numberOfMessages = 0;
 double *a;
 
-
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t msg_in = PTHREAD_COND_INITIALIZER;
 pthread_cond_t msg_out = PTHREAD_COND_INITIALIZER;
+
 
 
 void send(MessageType type, int start, int end) {
@@ -121,7 +121,6 @@ int partition(double *a, int n){
     return i;
 }
 
-
 void *threadFunc(void *params){
     int start = 0;
     int end = 0;
@@ -153,14 +152,12 @@ void *threadFunc(void *params){
         }
         // printf("type: %d, start: %d\n", type, start);
     }
-
     pthread_exit(NULL);
 }
 
 
 
 int main(int argc, char *argv[]){
-
     // int part1 = ARRAY_SIZE / 2;
     // int part2 = 0;
 
@@ -185,9 +182,16 @@ int main(int argc, char *argv[]){
 
     // printf("numberOfSplits: %d\n", numberOfSplits);
 
-
     pthread_t thread[THREADS] = {};
-    // printf("Allocating a\n");
+
+    int completed = 0;
+    MessageType type = WORK;
+    int start, end;
+
+    int errorsFound = 0;
+
+
+    printf("Allocating a\n");
 
     //Allocating memory
     a = (double *) malloc(sizeof(double) * ARRAY_SIZE);
@@ -209,11 +213,6 @@ int main(int argc, char *argv[]){
         }
     }
 
-    
-    int completed = 0;
-    MessageType type = WORK;
-    int start, end;
-
     while (completed < N) {
         receive(&type, &start, &end);
         if (type == FINISH){
@@ -231,13 +230,17 @@ int main(int argc, char *argv[]){
 
     for(int i = 0; i < (N-1); i++) {
         if (a[i] > a[i+1]) {
-            printf("Error\n");
-            break;
+            errorsFound++;
         }
     }
 
-    // printf("Dealocating a\n");
+    if (errorsFound > 0){
+        printf("Sort Process Exited With Errors.\n");
+    } else {
+        printf("Array Was Sorted Correctly.\n");
+    }
+
+    printf("Dealocating a\n");
     free(a);
     return 0;
 }
-
